@@ -4194,7 +4194,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		ButtonEventType updown = BET_OTHER;
 		bool mouse_shift = false;
 		if (event.EventType == EET_MOUSE_INPUT_EVENT) {
-			mouse_shift = event.MouseInput.Shift;
+			mouse_shift = event.MouseInput.Shift || g_settings->getBool("swipe_shift");
 			switch (event.MouseInput.Event) {
 			case EMIE_LMOUSE_PRESSED_DOWN:
 				button = BET_LEFT; updown = BET_DOWN;
@@ -4253,7 +4253,16 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// Set this number to a positive value to generate a craft action at s.
 		u32 craft_amount = 0;
 
-		switch (updown) {
+		// SwipeMove: moving a finger over slots shift-moves each stack
+                if (g_settings->getBool("swipe_shift") &&
+                                event.EventType == EET_MOUSE_INPUT_EVENT &&
+                                event.MouseInput.Event == EMIE_MOUSE_MOVED &&
+                                event.MouseInput.isLeftPressed() &&
+                                !m_selected_item && s.isValid() && !empty &&
+                                s.listname != "craftresult")
+                        shift_move_amount = s_count;
+
+                switch (updown) {
 		case BET_DOWN: {
 			// Some mouse button has been pressed
 

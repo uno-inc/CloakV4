@@ -64,15 +64,24 @@ public:
 		}
 	}
 
-	// Returns true to prevent further processing
-	virtual bool preprocessEvent(const SEvent& event)
-	{
-		if (m_stack.empty())
-			return false;
-		GUIModalMenu *mm = dynamic_cast<GUIModalMenu*>(m_stack.back());
-		return mm && mm->preprocessEvent(event);
-	}
+// Returns true to prevent further processing
+virtual bool preprocessEvent(const SEvent& event)
+{
+    if (m_stack.empty())
+        return false;
 
+    gui::IGUIElement *menu = m_stack.back();
+
+    GUIModalMenu *mm = dynamic_cast<GUIModalMenu*>(menu);
+    if (mm)
+        return mm->preprocessEvent(event);
+
+    // Forward touchscreen input to non-modal menus such as NewMenu.
+    if (event.EventType == EET_TOUCH_INPUT_EVENT)
+        return menu->OnEvent(event);
+
+    return false;
+}
 	size_t menuCount() const
 	{
 		return m_stack.size();

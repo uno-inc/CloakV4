@@ -10,6 +10,13 @@
 
 using namespace irr;
 
+struct BhBgState {
+	bool valid = false;
+	u64 stamp = 0;
+	s32 frame = 0, fw = 0, fh = 0, dx = 0, dy = 0, dw = 0, dh = 0;
+};
+extern BhBgState g_bh_bg;
+
 class GUIBox : public gui::IGUIElement
 {
 public:

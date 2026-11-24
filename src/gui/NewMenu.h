@@ -106,11 +106,11 @@ private:
     core::vector2d<s32> draggingHUDElementOffset;
     s32 category_height = 34;
     s32 category_width = category_height * 5;
-    const s32 setting_bar_width = category_height * 0.1;
-    const s32 setting_bar_padding = category_height * 0.1;
-    const s32 slider_height_padding = category_height * 0.4;
-    const s32 slider_width_padding = category_height * 0.3;
-    const s32 selection_box_padding = category_height * 0.1;
+    s32 setting_bar_width = 0;
+    s32 setting_bar_padding = 0;
+    s32 slider_height_padding = 0;
+    s32 slider_width_padding = 0;
+    s32 selection_box_padding = 0;
     bool m_is_open = false; 
     int draggedRectIndex = 0;
     int draggedSliderCategoryIndex = 0;

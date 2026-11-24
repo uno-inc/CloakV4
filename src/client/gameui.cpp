@@ -104,7 +104,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 
 		std::ostringstream os(std::ios_base::binary);
 		os << std::fixed
-			<< PROJECT_NAME_C " " << g_version_hash
+			<< "Luanti " << g_version_hash
 			<< " | FPS: " << fps
 			<< std::setprecision(fps >= 100 ? 1 : 0)
 			<< " | drawtime: " << m_drawtime_avg << "ms"

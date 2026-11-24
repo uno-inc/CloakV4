@@ -31,6 +31,7 @@ const char *button_names[] = {
 	"zoom",
 	"aux1",
 	"overflow",
+	"cheats",
 
 	"chat",
 	"inventory",
@@ -61,6 +62,7 @@ const char *button_titles[] = {
 	N_("Zoom"),
 	N_("Aux1"),
 	N_("Overflow menu"),
+	N_("Cheats menu"),
 
 	N_("Chat"),
 	N_("Inventory"),
@@ -90,6 +92,7 @@ const char *button_image_names[] = {
 	"zoom.png",
 	"aux1_btn.png",
 	"overflow_btn.png",
+	"debug_btn.png",
 
 	"chat_btn.png",
 	"inventory_btn.png",
@@ -197,6 +200,10 @@ const ButtonLayout::ButtonMap ButtonLayout::default_data {
 		v2f(1.0f, 1.0f),
 		v2f(-0.75f, -5.0f),
 	}},
+	{cheats_id, {
+		v2f(0.5f, 0.0f),
+		v2f(0.0f, 1.5f),
+	}},
 };
 
 ButtonLayout ButtonLayout::postProcessLoaded(const ButtonMap &data)
@@ -209,6 +216,7 @@ ButtonLayout ButtonLayout::postProcessLoaded(const ButtonMap &data)
 		else
 			layout.preserved_disallowed.emplace(id, meta);
 	}
+
 	return layout;
 }
 

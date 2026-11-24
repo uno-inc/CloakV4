@@ -3,6 +3,7 @@
 // Copyright (C) 2013 sapier
 
 #include "guiEngine.h"
+#include "guiBox.h"
 
 #include "client/fontengine.h"
 #include "client/guiscalingfilter.h"
@@ -470,6 +471,47 @@ void GUIEngine::drawBackground(video::IVideoDriver *driver, irr::f32 dtime)
 {
     v2u32 screensize = driver->getScreenSize();
     core::rect<s32> screen_rect(0, 0, screensize.X, screensize.Y);
+
+    // Animated black hole background: 16:9 frames stacked vertically in one picture
+    {
+        static bool bh_missing = false;
+        static float bh_time = 0.0f;
+        if (!bh_missing) {
+            std::string bh_path = porting::path_share + DIR_DELIM + "textures" + DIR_DELIM +
+                    "base" + DIR_DELIM + "pack" + DIR_DELIM + "blackhole_anim.png";
+            video::ITexture *bh_tex = driver->getTexture(bh_path.c_str());
+            if (!bh_tex) {
+                bh_missing = true;
+            } else {
+                core::dimension2d<u32> tsz = bh_tex->getOriginalSize();
+                s32 fw = (s32)tsz.Width;
+                s32 fh = (fw * 9) / 16;
+                s32 frames = fh > 0 ? (s32)tsz.Height / fh : 1;
+                if (frames < 1)
+                    frames = 1;
+                bh_time += dtime;
+                s32 frame = (s32)(bh_time / 0.1f) % frames;
+                core::rect<s32> src(0, frame * fh, fw, (frame + 1) * fh);
+                f32 scale = std::max((f32)screensize.X / (f32)fw, (f32)screensize.Y / (f32)fh);
+                s32 dw = (s32)((f32)fw * scale + 0.5f);
+                s32 dh = (s32)((f32)fh * scale + 0.5f);
+                s32 dx = ((s32)screensize.X - dw) / 2;
+                s32 dy = ((s32)screensize.Y - dh) / 2;
+                driver->draw2DRectangle(video::SColor(255, 0, 0, 0), screen_rect);
+                driver->draw2DImage(bh_tex, core::rect<s32>(dx, dy, dx + dw, dy + dh), src);
+                g_bh_bg.valid = true;
+                g_bh_bg.stamp = porting::getTimeMs();
+                g_bh_bg.frame = frame;
+                g_bh_bg.fw = fw;
+                g_bh_bg.fh = fh;
+                g_bh_bg.dx = dx;
+                g_bh_bg.dy = dy;
+                g_bh_bg.dw = dw;
+                g_bh_bg.dh = dh;
+                return;
+            }
+        }
+    }
 
     // Update base scroll offset for animation
     m_wave_offset += dtime * 2.0f;

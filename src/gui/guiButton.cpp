@@ -3,6 +3,8 @@
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
 #include "guiButton.h"
+#include "guiBox.h"
+#include <cmath>
 
 
 #include "client/guiscalingfilter.h"
@@ -275,6 +277,28 @@ void GUIButton::draw()
 		}
 	}
 
+	// Menu button animation: smooth grow on hover, shrink while pressed
+	core::rect<s32> anim_rect = AbsoluteRect;
+	core::rect<s32> anim_clip = Parent ? Parent->getAbsoluteClippingRect() : AbsoluteClippingRect;
+	{
+		u32 now_ms = (u32)porting::getTimeMs();
+		u32 dt_ms = m_anim_last ? std::min<u32>(now_ms - m_anim_last, 60) : 0;
+		m_anim_last = now_ms;
+		bool in_menu = g_bh_bg.valid && (porting::getTimeMs() - g_bh_bg.stamp < 250);
+		f32 target_h = (in_menu && isHovered()) ? 1.0f : 0.0f;
+		f32 target_p = (in_menu && Pressed) ? 1.0f : 0.0f;
+		f32 k = 1.0f - std::exp(-(f32)dt_ms / 70.0f);
+		m_hover_anim += (target_h - m_hover_anim) * k;
+		m_press_anim += (target_p - m_press_anim) * k;
+		f32 grow = 1.0f + 0.04f * m_hover_anim - 0.06f * m_press_anim;
+		if (grow > 1.0005f || grow < 0.9995f) {
+			s32 w = (s32)(AbsoluteRect.getWidth() * grow);
+			s32 h = (s32)(AbsoluteRect.getHeight() * grow);
+			v2s32 c = AbsoluteRect.getCenter();
+			anim_rect = core::rect<s32>(c.X - w / 2, c.Y - h / 2,
+					c.X - w / 2 + w, c.Y - h / 2 + h);
+		}
+	}
 	const core::position2di buttonCenter(AbsoluteRect.getCenter());
 	// PATCH
 	// The image changes based on the state, so we use the default every time.
@@ -306,13 +330,12 @@ void GUIButton::draw()
 		video::SColor image_colors[] = { BgColor, BgColor, BgColor, BgColor };
 		if (BgMiddle.getArea() == 0) {
 			driver->draw2DImage(texture,
-					ScaleImage? AbsoluteRect : core::rect<s32>(pos, sourceRect.getSize()),
-					sourceRect, &AbsoluteClippingRect,
-					image_colors, UseAlphaChannel);
+					ScaleImage? anim_rect : core::rect<s32>(pos, sourceRect.getSize()),
+					sourceRect, &anim_clip, image_colors, UseAlphaChannel);
 		} else {
 			draw2DImage9Slice(driver, texture,
-					ScaleImage ? AbsoluteRect : core::rect<s32>(pos, sourceRect.getSize()),
-					sourceRect, BgMiddle, &AbsoluteClippingRect, image_colors);
+					ScaleImage ? anim_rect : core::rect<s32>(pos, sourceRect.getSize()),
+					sourceRect, BgMiddle, &anim_clip, image_colors);
 		}
 		// END PATCH
 	}

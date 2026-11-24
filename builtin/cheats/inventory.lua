@@ -28,7 +28,40 @@ core.register_globalstep(function(dtime)
 			move_act:apply()
 		end
 	end
-	-- AutoPlanks (Strip in DF)
+	-- AutoHeal slot refill
+        if core.settings:get_bool("auto_heal") then
+                core.autoheal_refill_timer = (core.autoheal_refill_timer or 0) + dtime
+                if core.autoheal_refill_timer >= 0.5 then
+                        core.autoheal_refill_timer = 0
+                        core.autoheal_last_item = core.autoheal_last_item or {}
+                        local inv = core.get_inventory("current_player")
+                        if inv and inv.main then
+                                for slot = 1, 8 do
+                                        if core.settings:get_bool("auto_heal.slot_" .. slot) then
+                                                local st = inv.main[slot]
+                                                if st and not st:is_empty() then
+                                                        core.autoheal_last_item[slot] = st:get_name()
+                                                end
+                                                local name = core.autoheal_last_item[slot]
+                                                if name then
+                                                        local space = (st and not st:is_empty()) and st:get_free_space() or nil
+                                                        local src_i = core.find_additional_items(name, slot)
+                                                        if src_i and (space == nil or space > 0) then
+                                                                local count = inv.main[src_i]:get_count()
+                                                                if space then count = math.min(count, space) end
+                                                                local mv = InventoryAction("move")
+                                                                mv:to("current_player", "main", slot)
+                                                                mv:from("current_player", "main", src_i)
+                                                                mv:set_count(count)
+                                                                mv:apply()
+                                                        end
+                                                end
+                                        end
+                                end
+                        end
+                end
+        end
+        -- AutoPlanks (Strip in DF)
 	if core.settings:get_bool("autoplanks") then
 		if itemdef and itemdef.groups.tree and player:get_control().place then
 			strip_move_act:from("current_player", "main", wieldindex)
@@ -104,3 +137,6 @@ core.register_cheat("Hand", "Misc", core.open_handslot)
 core.register_cheat("Enderchest", "Misc", core.open_enderchest)
 core.register_cheat("AutoPlanks", "Misc", "autoplanks")
 core.register_cheat("AutoRefill", "Misc", "autorefill")
+core.register_cheat("GlassBlur", "Misc", "glass_blur")
+core.register_cheat("GlassBlurFlip", "Misc", "glass_blur_flip")
+core.register_cheat("SwipeMove", "Misc", "swipe_shift")

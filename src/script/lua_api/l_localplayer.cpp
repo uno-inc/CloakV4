@@ -48,6 +48,13 @@ int LuaLocalPlayer::l_get_velocity(lua_State *L)
 	return 1;
 }
 
+int LuaLocalPlayer::l_get_physical_velocity(lua_State *L)
+{
+        LocalPlayer *player = getobject(L, 1);
+        push_v3f(L, player->getLegitSpeed() / BS);
+        return 1;
+}
+
 int LuaLocalPlayer::l_get_hp(lua_State *L)
 {
 	LocalPlayer *player = getobject(L, 1);
@@ -737,6 +744,7 @@ int LuaLocalPlayer::l_set_lua_control(lua_State *L)
 const char LuaLocalPlayer::className[] = "LocalPlayer";
 const luaL_Reg LuaLocalPlayer::methods[] = {
 		luamethod(LuaLocalPlayer, get_velocity),
+                luamethod(LuaLocalPlayer, get_physical_velocity),
 		luamethod(LuaLocalPlayer, get_hp),
 		luamethod(LuaLocalPlayer, get_name),
 		luamethod(LuaLocalPlayer, get_yaw),

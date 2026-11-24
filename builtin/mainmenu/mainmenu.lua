@@ -7,6 +7,22 @@
 -- local defaulttexturedir = core.get_current_modpath() .. "/textures/"
 -- local dump = minetest.debug.dump -- Or your custom dump function
 
+local BH_FRAMES = 21
+local BH_FRAME_MS = 100
+local BH_ASPECT = 384 / 216
+
+local function get_screen_aspect()
+    local aspect = 2.2
+    if core.get_screen_info then
+        local ok, info = pcall(core.get_screen_info)
+        if ok and type(info) == "table" and info.window_width and info.window_height
+                and info.window_width > 0 and info.window_height > 0 then
+            aspect = info.window_width / info.window_height
+        end
+    end
+    return math.max(1.0, math.min(aspect, 3.5))
+end
+
 local function main_menu_formspec(this)
 
 	if cache_settings:get(LOGIN_USERNAME_SETTING_NAME)  == nil then
@@ -18,60 +34,81 @@ local function main_menu_formspec(this)
 	end
     -- The main menu formspec defines the overall size and includes all buttons.
     -- Assuming a fixed size for the main menu dialog for simplicity.
-    local width = 5 -- Example width
-    local height = 15 -- Example height
+    local height = 15
+    local aspect = get_screen_aspect()
+    local width = height * aspect
+
+    -- Black hole picture: fill the whole screen, keep its shape.
+    local img_w, img_h, img_x, img_y
+    if aspect >= BH_ASPECT then
+        img_w = width
+        img_h = width / BH_ASPECT
+        img_x = 0
+        img_y = -(img_h - height) / 2
+    else
+        img_h = height
+        img_w = height * BH_ASPECT
+        img_x = width - img_w
+        img_y = 0
+    end
+    local bh_image = string.format("animated_image[%f,%f;%f,%f;bh_anim;%s;%d;%d]",
+        img_x, img_y, img_w, img_h,
+        core.formspec_escape(defaulttexturedir .. "blackhole_anim.png"),
+        BH_FRAMES, BH_FRAME_MS)
     local fixed_size = false -- Or true, depending on desired behavior
 
     -- The 'prepend' content from your original get_formspec forms the core of this dialog.
+    local bar_gap = 0.3
+    local bar_w = math.min(4, (width - 0.4 - 6 * bar_gap) / 7)
+    local bar_x = (width - 0.4 - (7 * bar_w + 6 * bar_gap)) / 2
+    local bar_y = 11.9
     local formspec_elements = {
         "formspec_version[8]",
         string.format("size[%f,%f,%s]", width, height, dump(fixed_size)),
-        "position[0.015,0.015]",
+        "position[0,0]",
         "anchor[0,0]",
 		"padding[0,0]",
         "bgcolor[#0000]",
+        "",
+        "container[0.2,0.1]",
         -- Local Button
-        "style_type[image_button;border=false;textcolor=white;font_size=*2;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_hovered.png") .. "]",
-        "image_button[0,1;4,0.85;;local_btn;" .. fgettext("Local") .. "]",
+        "style_type[image_button;border=false;textcolor=white;font_size=*1.1;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_hovered.png") .. "]",
+        "style[local_btn;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button_primary.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_primary_hovered.png") .. ";textcolor=#3a1f00]",
+        string.format("image_button[%f,%f;%f,0.85;;local_btn;%s]", bar_x + 0 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Local")),
         -- Online Button
-        "image_button[0,2;4,0.85;;online;" .. fgettext("Online") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;online;%s]", bar_x + 1 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Online")),
         -- CSMs Button
-        "image_button[0,3;4,0.85;;csm;" .. fgettext("CSMs") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;csm;%s]", bar_x + 2 * (bar_w + bar_gap), bar_y, bar_w, fgettext("CSMs")),
         -- Content Button
-        "image_button[0,4;4,0.85;;content;" .. fgettext("Content") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;content;%s]", bar_x + 3 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Content")),
         -- Cosmetics Button
-        "image_button[0,5;4,0.85;;cosmetics;" .. fgettext("Cosmetics") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;cosmetics;%s]", bar_x + 4 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Cosmetics")),
         -- Settings Button
-        "image_button[0,6;4,0.85;;settings;" .. fgettext("Settings") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;settings;%s]", bar_x + 5 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Settings")),
         -- About Button
-        "image_button[0,7;4,0.85;;about;" .. fgettext("About") .. "]",
+        string.format("image_button[%f,%f;%f,0.85;;about;%s]", bar_x + 6 * (bar_w + bar_gap), bar_y, bar_w, fgettext("About")),
         -- Header Image
-        "image[0,0;4,0.8;" .. core.formspec_escape(defaulttexturedir .. "menu_header.png") .. "]",
+        "image[0,0;7,1.4;" .. core.formspec_escape(defaulttexturedir .. "menu_header.png") .. "]",
 
 		-- Secondary menu ( at the bottom )
 
 		-- Logged in as button
-        "style_type[image_button;border=false;textcolor=white;font_size=*0.9;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_account.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_account_hovered.png") .. "]",
-        "image_button[0,14.3;2.84,0.425;;logged_in;        " .. cache_settings:get(LOGIN_USERNAME_SETTING_NAME) .. "]",
+        "style_type[image_button;border=false;textcolor=white;font_size=*0.65;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_account.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_account_hovered.png") .. "]",
+        "image_button[0,14.3;3.85,0.425;;logged_in;        " .. cache_settings:get(LOGIN_USERNAME_SETTING_NAME) .. "]",
 
 		-- Exit button
-		"style_type[image_button;border=false;textcolor=white;font_size=*0.9;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_exit.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_exit_hovered.png") .. "]",
-        "image_button[2.9,14.3;1.4,0.425;;exit;        " .. fgettext("Exit") .. "]",
+		"style_type[image_button;border=false;textcolor=white;font_size=*0.65;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_exit.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_exit_hovered.png") .. "]",
+        "image_button[3.9,14.3;1.9,0.425;;exit;        " .. fgettext("Exit") .. "]",
 
 		-- github button
 
-		"style_type[image_button;border=false;textcolor=white;font_size=*0.9;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_github.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_github_hovered.png") .. "]",
-        "image_button[0,13.8;1.4,0.425;;github;         " .. fgettext("Github") .. "]",
 
 		-- discord button
 
-		"style_type[image_button;border=false;textcolor=white;font_size=*0.9;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_discord.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_discord_hovered.png") .. "]",
-        "image_button[1.45,13.8;1.4,0.425;;discord;         " .. fgettext("Discord") .. "]",
 
 		-- website button
 
-		"style_type[image_button;border=false;textcolor=white;font_size=*0.9;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_web.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_web_hovered.png") .. "]",
-        "image_button[2.9,13.8;1.4,0.425;;website;         " .. fgettext("Website") .. "]",
+        "container_end[]",
     }
 	return table.concat(formspec_elements, "")
 end

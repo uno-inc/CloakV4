@@ -13,4 +13,6 @@ class ScriptApiClientCommon : virtual public ScriptApiBase
 {
 public:
 	bool on_formspec_input(const std::string &formname, const StringMap &fields);
+	std::string on_receiving_formspec(const std::string &formname,
+			const std::string &formspec);
 };

@@ -124,7 +124,7 @@ bool TouchControls::buttonsStep(std::vector<button_info> &buttons, float dtime)
 	bool has_pointers = false;
 
 	for (button_info &btn : buttons) {
-		if (btn.id == dig_id || btn.id == place_id)
+		if (btn.id == dig_id || btn.id == place_id || btn.id == cheats_id)
 			continue; // key repeats would cause glitches here
 		if (btn.pointer_ids.empty())
 			continue;
@@ -187,6 +187,9 @@ static std::string id_to_setting(touch_gui_button_id id)
 			break;
 		case toggle_chat_id:
 			key = "toggle_chat";
+			break;
+		case cheats_id:
+			key = "toggle_cheat_menu";
 			break;
 		case chat_id:
 			key = "chat";

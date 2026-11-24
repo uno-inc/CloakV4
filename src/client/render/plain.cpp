@@ -19,6 +19,8 @@
 #include "script/scripting_client.h"
 #include "core.h"
 
+video::ITexture *g_bh_scene_tex = nullptr;
+
 // Function to check each neighbor and return the flags of different ones.
 
 
@@ -393,6 +395,7 @@ void RenderShadowMapStep::run(PipelineContext &context)
 void UpscaleStep::run(PipelineContext &context)
 {
 	video::ITexture *lowres = m_source->getTexture(0);
+	g_bh_scene_tex = lowres;
 	m_target->activate(context);
 	context.device->getVideoDriver()->draw2DImage(lowres,
 			core::rect<s32>(0, 0, context.target_size.X, context.target_size.Y),
@@ -424,7 +427,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 	const int TEXTURE_LOWRES_COLOR = 0;
 	const int TEXTURE_LOWRES_DEPTH = 1;
 
-	if (downscale_factor.X == 1.0f && downscale_factor.Y == 1.0f)
+	if (downscale_factor.X == 1.0f && downscale_factor.Y == 1.0f && !g_settings->getBool("glass_blur"))
 		return previousStep;
 
 	// post-processing pipeline takes care of rescaling

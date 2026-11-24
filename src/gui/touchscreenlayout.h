@@ -39,6 +39,7 @@ enum touch_gui_button_id : u8
 	zoom_id,
 	aux1_id,
 	overflow_id,
+	cheats_id,
 
 	// formerly "rare controls bar"
 	chat_id,

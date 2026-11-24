@@ -18,6 +18,7 @@ private:
 
 	// get_velocity(self)
 	static int l_get_velocity(lua_State *L);
+        static int l_get_physical_velocity(lua_State *L);
 
 	// get_yaw(self)
 	static int l_get_yaw(lua_State *L);

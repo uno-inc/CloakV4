@@ -60,41 +60,75 @@ local function findFlags()
     return foundNodes
 end
 
+local AUTOHEAL_SLOT = 8
+local autoheal_busy = false
+
+local function get_selected_slots()
+    return {AUTOHEAL_SLOT}
+end
+
+local function is_food(item_name)
+    local def = core.get_item_def(item_name)
+    if not def or not def.groups then return false end
+    for group_name, value in pairs(def.groups) do
+        if value and value ~= 0 and (
+            group_name == "food" or
+            group_name == "eatable" or
+            group_name == "edible" or
+            group_name:sub(1, 5) == "food_"
+        ) then
+            return true
+        end
+    end
+    return false
+end
+
+local function find_selected_food_slot()
+    local inv = core.get_inventory("current_player")
+    if not inv then return nil end
+    for _, slot in ipairs(get_selected_slots()) do
+        local stack = inv.main[slot]
+        if stack and not stack:is_empty() then
+            core.log("action", "[AutoHeal] using slot " .. slot .. ": " .. stack:get_name())
+            return slot
+        end
+    end
+    return nil
+end
+
 core.register_globalstep(function(dtime)
 
     -- AutoHeal
-	if core.localplayer then
-		if heal_cooldown > 0 then
-			heal_cooldown = heal_cooldown - dtime
-		end
+    if core.localplayer then
+        if heal_cooldown > 0 then
+            heal_cooldown = heal_cooldown - dtime
+        end
 
-		if heal_cooldown <= 0 and core.localplayer:get_hp() < tonumber(core.settings:get("auto_heal.hp")) and core.settings:get_bool("auto_heal") then
-			local current_wield_index = core.localplayer:get_wield_index() + 1
-			local food_index = nil
+        if heal_cooldown <= 0 and core.localplayer:get_hp() < tonumber(core.settings:get("auto_heal.hp")) and core.settings:get_bool("auto_heal") then
+            local food_slot = nil
+            if not autoheal_busy then
+                food_slot = find_selected_food_slot()
+            end
+            if food_slot then
+                autoheal_busy = true
+                core.after(2, function() autoheal_busy = false end)
+                local saved_wield = core.localplayer:get_wield_index()
+                core.localplayer:set_wield_index(food_slot)
+                heal_cooldown = tonumber(core.settings:get("auto_heal.cooldown"))
 
-			for index, stack in ipairs(core.get_inventory("current_player").main) do
-				if stack and stack:get_name() ~= "" then
-					for group_name, _ in pairs(core.get_item_def(stack:get_name()).groups) do
-						if group_name:sub(1, 5) == "food_" then
-							food_index = index
-							break
-						end
-					end
-				end
-				if food_index then break end
-			end
-
-			if food_index then
-				core.localplayer:set_wield_index(food_index)
-				heal_cooldown = tonumber(core.settings:get("auto_heal.cooldown"))
-
-				core.after(tonumber(core.settings:get("auto_heal.delay")), function()
-					core.interact("use", {type="nothing"})
-					core.localplayer:set_wield_index(current_wield_index)
-				end)
-			end
-		end
-	end
+                core.after(tonumber(core.settings:get("auto_heal.delay")), function()
+                    core.interact("use", {type="nothing"})
+                    core.localplayer:set_wield_index(saved_wield + 1)
+                    core.after(0.05, function()
+                        if core.localplayer:get_wield_index() ~= saved_wield then
+                            core.localplayer:set_wield_index(saved_wield)
+                        end
+                        autoheal_busy = false
+                    end)
+                end)
+            end
+        end
+    end
     local player = minetest.localplayer
     if not player then
         return
@@ -166,6 +200,9 @@ core.register_cheat_description("AutoHeal", "Misc", "auto_heal", "Automatically 
 core.register_cheat_setting("Delay", "Misc", "auto_heal", "auto_heal.delay", {type="slider_float", min=0.0, max=1.5, steps=16})
 core.register_cheat_setting("Cooldown", "Misc", "auto_heal", "auto_heal.cooldown", {type="slider_float", min=0.0, max=1.5, steps=16})
 core.register_cheat_setting("HP", "Misc", "auto_heal", "auto_heal.hp", {type="slider_int", min=1, max=30, steps=30})
+for i = 1, 32 do
+    core.register_cheat_setting(tostring(i), "Misc", "auto_heal", "auto_heal.slot_" .. i, {type="bool"})
+end
 --AppleAura
 minetest.register_cheat_with_infotext("AppleAura", "Misc", "appleaura", "CTF")
 minetest.register_cheat_setting("Radius", "Misc", "appleaura", "appleaura.range", {type="slider_float", min=1, max=6, steps=6})

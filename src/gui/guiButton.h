@@ -174,6 +174,9 @@ public:
 			const wchar_t *tooltiptext=L"");
 
 protected:
+	f32 m_hover_anim = 0.0f;
+	f32 m_press_anim = 0.0f;
+	u32 m_anim_last = 0;
 	void drawSprite(gui::EGUI_BUTTON_STATE state, u32 startTime, const core::position2di& center);
 	gui::EGUI_BUTTON_IMAGE_STATE getImageState(bool pressed) const;
 

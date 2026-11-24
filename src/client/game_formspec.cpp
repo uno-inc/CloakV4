@@ -242,8 +242,11 @@ void GameFormSpec::showFormSpec(const std::string &formspec, const std::string &
 	if (handleEmptyFormspec(formspec, formname))
 		return;
 
+	const std::string modified_formspec =
+		m_client->getScript()->on_receiving_formspec(formname, formspec);
+
 	FormspecFormSource *fs_src =
-		new FormspecFormSource(formspec);
+		new FormspecFormSource(modified_formspec);
 	TextDestPlayerInventory *txt_dst =
 		new TextDestPlayerInventory(m_client, formname);
 

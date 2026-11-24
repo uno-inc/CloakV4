@@ -37,3 +37,40 @@ bool ScriptApiClientCommon::on_formspec_input(const std::string &formname,
 	}
 	return readParam<bool>(L, -1);
 }
+
+
+std::string ScriptApiClientCommon::on_receiving_formspec(
+			const std::string &formname, const std::string &formspec)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	lua_getglobal(L, "core");
+	lua_getfield(L, -1, "registered_on_receiving_formspec");
+	if (!lua_istable(L, -1)) {
+		errorstream << "on_receiving_formspec: callbacks is "
+			<< luaL_typename(L, -1) << std::endl;
+		lua_pop(L, 2);
+		return formspec;
+	}
+	if (!lua_istable(L, -1)) {
+		errorstream << "on_receiving_formspec: callbacks is "
+			<< luaL_typename(L, -1) << std::endl;
+		lua_pop(L, 2);
+		return formspec;
+	}
+
+	lua_pushstring(L, formname.c_str());
+	lua_pushlstring(L, formspec.c_str(), formspec.size());
+
+	try {
+		runCallbacks(2, RUN_CALLBACKS_MODE_FIRST);
+	} catch (LuaError &e) {
+		getClient()->setFatalError(e);
+		return formspec;
+	}
+
+	if (lua_type(L, -1) == LUA_TSTRING)
+		return readParam<std::string>(L, -1);
+
+	return formspec;
+}
