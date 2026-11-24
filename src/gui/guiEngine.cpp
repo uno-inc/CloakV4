@@ -382,7 +382,52 @@ void GUIEngine::run()
 
 			drawFooter(driver);
 
-			m_rendering_engine->get_gui_env()->drawAll();
+			{
+				// Screen transition: draw the GUI into a texture, then fade and slide it in
+				static video::ITexture *bh_tr_tex = nullptr;
+				static core::dimension2d<u32> bh_tr_size(0, 0);
+				static std::string bh_tr_last;
+				static f32 bh_tr_t = 1.0f;
+				gui::IGUIEnvironment *bh_genv = m_rendering_engine->get_gui_env();
+				std::string bh_key;
+				if (m_formspecgui) {
+					const std::string &bh_f = m_formspecgui->getForm();
+					bh_key = bh_f.substr(0, std::min<size_t>(bh_f.size(), 48));
+				}
+				if (bh_key != bh_tr_last) {
+					if (!bh_tr_last.empty())
+						bh_tr_t = 0.0f;
+					bh_tr_last = bh_key;
+				}
+				bool bh_done = false;
+				if (bh_tr_t < 1.0f && g_settings->getBool("menu_transitions")) {
+					v2u32 bh_ss = driver->getScreenSize();
+					if (!bh_tr_tex || bh_tr_size.Width != bh_ss.X || bh_tr_size.Height != bh_ss.Y) {
+						if (bh_tr_tex)
+							driver->removeTexture(bh_tr_tex);
+						bh_tr_tex = driver->addRenderTargetTexture(
+							core::dimension2d<u32>(bh_ss.X, bh_ss.Y), "bh_transition", video::ECF_A8R8G8B8);
+						bh_tr_size = core::dimension2d<u32>(bh_ss.X, bh_ss.Y);
+					}
+					if (bh_tr_tex) {
+						driver->setRenderTarget(bh_tr_tex, video::ECBF_COLOR, video::SColor(0, 0, 0, 0));
+						bh_genv->drawAll();
+						driver->setRenderTargetEx(nullptr, video::ECBF_NONE);
+						driver->OnResize(bh_ss);
+						bh_tr_t = std::min(1.0f, bh_tr_t + dtime / 0.28f);
+						f32 bh_e = 1.0f - std::pow(1.0f - bh_tr_t, 3.0f);
+						s32 bh_off = (s32)((1.0f - bh_e) * bh_ss.Y * 0.04f);
+						video::SColor bh_c((u32)(255.0f * bh_e), 255, 255, 255);
+						video::SColor bh_cols[4] = {bh_c, bh_c, bh_c, bh_c};
+						driver->draw2DImage(bh_tr_tex,
+							core::rect<s32>(0, bh_off, bh_ss.X, bh_ss.Y + bh_off),
+							core::rect<s32>(0, 0, bh_ss.X, bh_ss.Y), nullptr, bh_cols, true);
+						bh_done = true;
+					}
+				}
+				if (!bh_done)
+					bh_genv->drawAll();
+			}
 
 			// The header *must* be drawn after the menu because it uses
 			// GUIFormspecMenu::getAbsoluteRect().

@@ -114,11 +114,11 @@ local function get_formspec(tabview, name, tabdata)
 		"box[0,0;5.75,7.1;#666666]" ..
 
 		-- Address / Port
-		"label[0.25,0.35;" .. fgettext("Address") .. "]" ..
-		"label[4.25,0.35;" .. fgettext("Port") .. "]" ..
-		"field[0.25,0.5;4,0.75;te_address;;" ..
+		"label[0.25,0.25;" .. fgettext("Address") .. "]" ..
+		"label[4.25,0.25;" .. fgettext("Port") .. "]" ..
+		"field[0.25,0.65;4,0.75;te_address;;" ..
 			core.formspec_escape(core.settings:get("address")) .. "]" ..
-		"field[4.25,0.5;1.25,0.75;te_port;;" ..
+		"field[4.25,0.65;1.25,0.75;te_port;;" ..
 			core.formspec_escape(core.settings:get("remote_port")) .. "]" ..
 
 		-- Description Background
@@ -126,11 +126,11 @@ local function get_formspec(tabview, name, tabdata)
 		"box[0.25,1.85;5.25,2.7;#999999]"..
 
 		-- Name / Password
-		"container[0,4.8]" ..
+		"container[0,4.7]" ..
 		"label[0.25,0;" .. fgettext("Name") .. "]" ..
 		"label[2.875,0;" .. fgettext("Password") .. "]" ..
-		"field[0.25,0.2;2.625,0.75;te_name;;" .. core.formspec_escape(core.settings:get("name")) .. "]" ..
-		"pwdfield[2.875,0.2;2.625,0.75;te_pwd;]" ..
+		"field[0.25,0.4;2.625,0.75;te_name;;" .. core.formspec_escape(core.settings:get("name")) .. "]" ..
+		"pwdfield[2.875,0.4;2.625,0.75;te_pwd;]" ..
 		"container_end[]" ..
 
 		-- Connect

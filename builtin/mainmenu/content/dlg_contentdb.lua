@@ -312,15 +312,19 @@ local function get_formspec(dlgdata)
 
 	-- Use as much of the available space as possible (so no padding on the
 	-- right/bottom), but don't quite allow the text to touch the border.
-	local text_w = cell_w - img_w - 0.25 - 0.025
+	local text_w = cell_w - cell_h / 2 - img_w - 0.25 - 0.025
 	local text_h = cell_h - 0.25 - 0.025
 
 	local start_idx = (cur_page - 1) * num_per_page + 1
 	for i=start_idx, math.min(#contentdb.packages, start_idx+num_per_page-1) do
 		local package = contentdb.packages[i]
-		local text = core.colorize(mt_color_green, package.title) ..
+		local short_desc = package.short_description or ""
+            if #short_desc > 55 then
+                short_desc = short_desc:sub(1, 52):gsub("[\192-\255][\128-\191]*$", "") .. "..."
+            end
+            local text = core.colorize(mt_color_green, package.title) ..
 			core.colorize("#BFBFBF", " by " .. package.author) .. "\n" ..
-			package.short_description
+			short_desc
 
 		table.insert_all(formspec, {
 			"container[",
@@ -329,17 +333,17 @@ local function get_formspec(dlgdata)
 			(cell_h + cell_spacing) * math.floor((i - start_idx) / columns),
 			"]",
 
-			"box[0,0;", cell_w, ",", cell_h, ";#ffffff11]",
+			
 
 			-- image,
-			"image[0,0;", img_w, ",", cell_h, ";",
+			"image[", cell_h / 2, ",0;", img_w, ",", cell_h, ";",
 				core.formspec_escape(get_screenshot(package, package.thumbnail, 2)), "]",
 
-			"label[", img_w + 0.25, ",0.25;", text_w, ",", text_h, ";",
+			"label[", cell_h / 2 + img_w + 0.25, ",0.25;", text_w, ",", text_h, ";",
 				core.formspec_escape(text), "]",
 
 			-- Add a tooltip in case the label overflows and the short description is cut off.
-			"tooltip[", img_w + 0.25, ",0.25;", text_w, ",", text_h, ";",
+			"tooltip[", cell_h / 2 + img_w + 0.25, ",0.25;", text_w, ",", text_h, ";",
 				-- Text in tooltips doesn't wrap automatically, so we do it manually to
 				-- avoid everything being one long line.
 				core.formspec_escape(core.wrap_text(package.short_description, 80)), "]",
@@ -353,7 +357,7 @@ local function get_formspec(dlgdata)
 		if package.featured then
 			table.insert_all(formspec, {
 				"tooltip[0,0;0.8,0.8;", fgettext("Featured"), "]",
-				"image[0.2,0.2;0.4,0.4;", core.formspec_escape(defaulttexturedir .. "server_favorite.png"), "]",
+				"image[", cell_h / 4 - 0.2, ",", cell_h / 2 - 0.2, ";0.4,0.4;", core.formspec_escape(defaulttexturedir .. "server_favorite.png"), "]",
 			})
 		end
 

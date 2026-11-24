@@ -335,12 +335,20 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 	current_theme = theme_manager.GetThemeByName(current_theme_name);
 	v2u32 screensize = getWindowSize();
 
-	v2s32 textsize(g_fontengine->getTextWidth(text), g_fontengine->getLineHeight());
+	std::wstring msg = text;
+        if (!msg.empty() && msg.back() == L'%') {
+                size_t sp = msg.find_last_of(L' ');
+                if (sp != std::wstring::npos)
+                        msg.erase(sp);
+        }
+        v2s32 textsize(g_fontengine->getTextWidth(msg), g_fontengine->getLineHeight());
 	v2s32 center(screensize.X / 2, screensize.Y / 2);
-	core::rect<s32> textrect(center - textsize / 2, center + textsize / 2);
+	s32 msg_y = (screensize.Y * 2) / 3 - textsize.Y * 3 / 2;
+        core::rect<s32> textrect(v2s32(center.X - textsize.X / 2, msg_y),
+                        v2s32(center.X + textsize.X / 2, msg_y + textsize.Y));
 
 	gui::IGUIStaticText *guitext =
-		gui::StaticText::add(guienv, text, textrect, false, false);
+		gui::StaticText::add(guienv, msg, textrect, false, false);
 	guitext->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_UPPERLEFT);
 
 	auto *driver = get_video_driver();
@@ -372,52 +380,34 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 
 	driver->draw2DRectangle(background_color, core::rect<s32>(0, 0, screensize.X, screensize.Y));
 
-	for (int layer = 0; layer < layer_count; ++layer) {
-		std::vector<video::S3DVertex> vertices;
-		std::vector<u16> indices;
+        // Blackhole animated background (same strip as the main menu)
+        {
+                static bool bh_missing = false;
+                if (!bh_missing) {
+                        std::string bh_path = porting::path_share + "/textures/base/pack/blackhole_anim.png";
+                        video::ITexture *bh_tex = driver->getTexture(bh_path.c_str());
+                        if (!bh_tex) {
+                                bh_missing = true;
+                        } else {
+                                core::dimension2d<u32> tsz = bh_tex->getOriginalSize();
+                                s32 fw = (s32)tsz.Width;
+                                s32 fh = (fw * 9) / 16;
+                                s32 frames = fh > 0 ? (s32)tsz.Height / fh : 1;
+                                if (frames < 1)
+                                        frames = 1;
+                                s32 frame = (s32)((porting::getTimeMs() / 100) % (u32)frames);
+                                core::rect<s32> src(0, frame * fh, fw, (frame + 1) * fh);
+                                f32 scale = std::max((f32)screensize.X / (f32)fw, (f32)screensize.Y / (f32)fh);
+                                s32 dw = (s32)((f32)fw * scale + 0.5f);
+                                s32 dh = (s32)((f32)fh * scale + 0.5f);
+                                s32 dx = ((s32)screensize.X - dw) / 2;
+                                s32 dy = ((s32)screensize.Y - dh) / 2;
+                                driver->draw2DImage(bh_tex, core::rect<s32>(dx, dy, dx + dw, dy + dh), src);
+                        }
+                }
+        }
 
-		float parallax_factor = 0.3f + (layer / (float)(layer_count - 1)) * 0.7f;
-		float layer_offset = wave_offset * parallax_factor;
-
-		int base_y = base_y_back + vertical_spacing * layer;
-		float amplitude = base_amplitude * (1.0f - 0.15f * layer);
-		video::SColor wave_color = colors[layer];
-
-		for (int x = 0; x <= (int)screensize.X; x += wave_step) {
-			float noise_x = layer_offset + (float)x * 0.01f + layer * 100.0f;
-			int y = base_y + (int)(valueNoise1D_renderingengine(noise_x, layer) * amplitude);
-
-			vertices.emplace_back(core::vector3df((f32)x, (f32)y, 0.0f),
-								  core::vector3df(0, 0, 1),
-								  wave_color,
-								  core::vector2df(0.0f, 0.0f));
-
-			vertices.emplace_back(core::vector3df((f32)x, (f32)screensize.Y, 0.0f),
-								  core::vector3df(0, 0, 1),
-								  wave_color,
-								  core::vector2df(0.0f, 0.0f));
-		}
-
-		for (u16 i = 0; i < vertices.size() - 2; i += 2) {
-			indices.push_back(i);
-			indices.push_back(i + 2);
-			indices.push_back(i + 1);
-
-			indices.push_back(i + 1);
-			indices.push_back(i + 2);
-			indices.push_back(i + 3);
-		}
-
-		driver->draw2DVertexPrimitiveList(
-			&vertices[0], vertices.size(),
-			&indices[0], indices.size() / 3,
-			video::EVT_STANDARD,
-			scene::EPT_TRIANGLES,
-			video::EIT_16BIT
-		);
-	}
-
-	int percent_min = 0;
+        int percent_min = 0;
 	int percent_max = percent;
 	if (indef_pos) {
 		*indef_pos = fmodf(*indef_pos + (dtime * 50.0f), 140.0f);
@@ -425,44 +415,44 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 		percent_min = std::max((int) *indef_pos - 40, 0);
 	}
 
-	if ((percent_min >= 0) && (percent_max <= 100)) {
-		video::ITexture *progress_img = tsrc->getTexture("progress_bar.png");
-		video::ITexture *progress_img_bg = tsrc->getTexture("progress_bar_bg.png");
+	gui::IGUIStaticText *pcttext = nullptr;
+        {
+                static bool ring_missing = false;
+                if (!ring_missing) {
+                        std::string ring_path = porting::path_share + "/textures/base/pack/blackhole_ring_sheet.png";
+                        video::ITexture *ring_tex = driver->getTexture(ring_path.c_str());
+                        if (!ring_tex) {
+                                ring_missing = true;
+                        } else {
+                                const s32 cols = 6, frames = 30, cell = 256;
+                                s32 frame = (s32)((porting::getTimeMs() / 67) % frames);
+                                s32 sx = (frame % cols) * cell;
+                                s32 sy = (frame / cols) * cell;
+                                s32 size = (s32)screensize.Y / 4;
+                                s32 cx = (s32)screensize.X / 2;
+                                s32 cy = (s32)screensize.Y - size / 2 - (s32)screensize.Y / 12;
+                                core::rect<s32> dst(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2);
+                                core::rect<s32> src(sx, sy, sx + cell, sy + cell);
+                                const video::SColor white(255, 255, 255, 255);
+                                const video::SColor tint[4] = {white, white, white, white};
+                                driver->draw2DImage(ring_tex, dst, src, nullptr, tint, true);
 
-		if (progress_img && progress_img_bg) {
-#ifndef __ANDROID__
-			const core::dimension2d<u32> &img_size = progress_img_bg->getSize();
-			float density = g_settings->getFloat("gui_scaling", 0.5f, 20.0f) * getDisplayDensity();
-			u32 imgW = rangelim(img_size.Width, 200, 600) * density;
-			u32 imgH = rangelim(img_size.Height, 24, 72) * density;
-#else
-			const core::dimension2d<u32> img_size(256, 48);
-			float imgRatio = (float)img_size.Height / img_size.Width;
-			u32 imgW = screensize.X / 2.2f;
-			u32 imgH = floor(imgW * imgRatio);
-#endif
-			v2s32 img_pos((screensize.X - imgW) / 2,
-			              (screensize.Y - imgH) / 2);
+                                if (!indef_pos && percent >= 0 && percent <= 100) {
+                                        std::wstring ptxt = std::to_wstring(percent) + L"%";
+                                        core::rect<s32> prect(cx - size / 4, cy - size / 8, cx + size / 4, cy + size / 8);
+                                        pcttext = gui::StaticText::add(guienv, ptxt, prect, false, false);
+                                        pcttext->setTextAlignment(gui::EGUIA_CENTER, gui::EGUIA_CENTER);
+                                        pcttext->setOverrideColor(white);
+                                }
+                        }
+                }
+        }
 
-			draw2DImageFilterScaled(driver, progress_img_bg,
-			                        core::rect<s32>(img_pos.X, img_pos.Y, img_pos.X + imgW, img_pos.Y + imgH),
-			                        core::rect<s32>(0, 0, img_size.Width, img_size.Height),
-			                        0, 0, true);
-
-			draw2DImageFilterScaled(driver, progress_img,
-			                        core::rect<s32>(
-			                            img_pos.X + (percent_min * imgW) / 100, img_pos.Y,
-			                            img_pos.X + (percent_max * imgW) / 100, img_pos.Y + imgH),
-			                        core::rect<s32>(
-			                            percent_min * img_size.Width / 100, 0,
-			                            percent_max * img_size.Width / 100, img_size.Height),
-			                        0, 0, true);
-		}
-	}
-
-	guienv->drawAll();
+        guienv->drawAll();
 	driver->endScene();
 	guitext->remove();
+        if (pcttext)
+                pcttext->remove();
 }
 
 

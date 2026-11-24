@@ -266,6 +266,7 @@ void set_default_settings()
 	settings->setDefault("autorefill", "false");
     settings->setDefault("glass_blur", "false");
     settings->setDefault("glass_blur_flip", "false");
+    settings->setDefault("menu_transitions", "true");
     settings->setDefault("swipe_shift", "false");
 	settings->setDefault("autoplanks", "false");
 	settings->setDefault("use_chat_effects", "false");

@@ -5,7 +5,7 @@ endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(cloakv4)
-set(PROJECT_NAME_CAPITALIZED "CloakV4")
+set(PROJECT_NAME_CAPITALIZED "Blackhole")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)

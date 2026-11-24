@@ -6,6 +6,7 @@
 
 #include <array>
 #include <IGUIElement.h>
+#include <IVideoDriver.h>
 #include <IGUIEnvironment.h>
 
 using namespace irr;
@@ -16,6 +17,7 @@ struct BhBgState {
 	s32 frame = 0, fw = 0, fh = 0, dx = 0, dy = 0, dw = 0, dh = 0;
 };
 extern BhBgState g_bh_bg;
+bool bhPaintGlass(video::IVideoDriver *driver, const core::rect<s32> &rect, const core::rect<s32> &clip);
 
 class GUIBox : public gui::IGUIElement
 {

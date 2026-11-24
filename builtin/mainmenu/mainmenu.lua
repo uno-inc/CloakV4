@@ -23,7 +23,60 @@ local function get_screen_aspect()
     return math.max(1.0, math.min(aspect, 3.5))
 end
 
+
+local bh_tracks = nil
+local bh_track_idx = 1
+local bh_handle = nil
+local bh_playing = false
+local bh_started = false
+
+local function bh_load_tracks()
+    if bh_tracks then return end
+    bh_tracks = {}
+    local list = core.get_dir_list(defaulttexturedir, false) or {}
+    for _, f in ipairs(list) do
+        local base = f:match("^(menu_music%d*)%.ogg$")
+        if base then bh_tracks[#bh_tracks + 1] = base end
+    end
+    table.sort(bh_tracks)
+end
+
+local function bh_stop()
+    if bh_handle then core.sound_stop(bh_handle) bh_handle = nil end
+    bh_playing = false
+end
+
+local function bh_play()
+    bh_load_tracks()
+    if #bh_tracks == 0 then return end
+    bh_stop()
+    bh_handle = core.sound_play(defaulttexturedir .. bh_tracks[bh_track_idx], true)
+    bh_playing = true
+end
+
+local function bh_autostart()
+    if bh_started then return end
+    bh_started = true
+    if core.settings:get("menu_music") == "false" then return end
+    bh_load_tracks()
+    if #bh_tracks == 0 then return end
+    math.randomseed(os.time())
+    bh_track_idx = math.random(#bh_tracks)
+    bh_play()
+end
+
+local function bh_music_ui(width)
+    bh_load_tracks()
+    if #bh_tracks == 0 then return "" end
+    local mx = width - 0.4 - 7.4
+    return string.format("label[%f,13.65;%s]", mx, core.formspec_escape(string.format("Track %d / %d", bh_track_idx, #bh_tracks)))
+        .. string.format("image_button[%f,13.3;1.2,0.7;;music_prev;<<]", mx + 2.5)
+        .. string.format("image_button[%f,13.3;1.9,0.7;;music_toggle;%s]", mx + 3.8, bh_playing and "Pause" or "Play")
+        .. string.format("image_button[%f,13.3;1.2,0.7;;music_next;>>]", mx + 5.8)
+end
+
 local function main_menu_formspec(this)
+	bh_autostart()
 
 	if cache_settings:get(LOGIN_USERNAME_SETTING_NAME)  == nil then
 		cache_settings:set(LOGIN_USERNAME_SETTING_NAME, "")	
@@ -69,10 +122,10 @@ local function main_menu_formspec(this)
         "anchor[0,0]",
 		"padding[0,0]",
         "bgcolor[#0000]",
-        "",
+        -- (vignette removed)
         "container[0.2,0.1]",
         -- Local Button
-        "style_type[image_button;border=false;textcolor=white;font_size=*1.1;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_hovered.png") .. "]",
+        "style_type[image_button;border=false;textcolor=white;font_size=*1.1;padding=0;font=bold;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_hovered.png") .. ";bgimg_pressed=" .. core.formspec_escape(defaulttexturedir .. "menu_button_pressed.png") .. "]",
         "style[local_btn;bgimg=" .. core.formspec_escape(defaulttexturedir .. "menu_button_primary.png") .. ";bgimg_hovered=" .. core.formspec_escape(defaulttexturedir .. "menu_button_primary_hovered.png") .. ";textcolor=#3a1f00]",
         string.format("image_button[%f,%f;%f,0.85;;local_btn;%s]", bar_x + 0 * (bar_w + bar_gap), bar_y, bar_w, fgettext("Local")),
         -- Online Button
@@ -88,7 +141,8 @@ local function main_menu_formspec(this)
         -- About Button
         string.format("image_button[%f,%f;%f,0.85;;about;%s]", bar_x + 6 * (bar_w + bar_gap), bar_y, bar_w, fgettext("About")),
         -- Header Image
-        "image[0,0;7,1.4;" .. core.formspec_escape(defaulttexturedir .. "menu_header.png") .. "]",
+        bh_music_ui(width),
+        "animated_image[0,0;7,1.4;hdr_anim;" .. core.formspec_escape(defaulttexturedir .. "menu_header_anim.png") .. ";16;80]",
 
 		-- Secondary menu ( at the bottom )
 
@@ -116,6 +170,23 @@ end
 local function main_menu_buttonhandler(this, fields)
 	if this.hidden then
 		return false
+	end
+	if fields.music_prev or fields.music_next or fields.music_toggle then
+		bh_load_tracks()
+		if #bh_tracks > 0 then
+			if fields.music_prev then
+				bh_track_idx = ((bh_track_idx - 2) % #bh_tracks) + 1
+				bh_play()
+			elseif fields.music_next then
+				bh_track_idx = (bh_track_idx % #bh_tracks) + 1
+				bh_play()
+			elseif bh_playing then
+				bh_stop()
+			else
+				bh_play()
+			end
+		end
+		return true
 	end
     if fields.local_btn then
         local dlg = create_local_dlg()

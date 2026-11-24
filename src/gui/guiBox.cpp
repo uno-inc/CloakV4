@@ -9,6 +9,42 @@
 #include <string>
 
 BhBgState g_bh_bg;
+
+bool bhPaintGlass(video::IVideoDriver *driver, const core::rect<s32> &rect, const core::rect<s32> &clip)
+{
+	if (!g_bh_bg.valid || g_bh_bg.dw <= 0 || porting::getTimeMs() - g_bh_bg.stamp >= 250)
+		return false;
+	static video::ITexture *blur_tex = nullptr;
+	static bool blur_missing = false;
+	if (!blur_tex && !blur_missing) {
+		std::string p = porting::path_share + DIR_DELIM + "textures" + DIR_DELIM +
+				"base" + DIR_DELIM + "pack" + DIR_DELIM + "blackhole_anim_blur.png";
+		blur_tex = driver->getTexture(p.c_str());
+		if (!blur_tex)
+			blur_missing = true;
+	}
+	if (!blur_tex)
+		return false;
+	core::rect<s32> d = rect;
+	d.clipAgainst(clip);
+	d.clipAgainst(core::rect<s32>(g_bh_bg.dx, g_bh_bg.dy,
+			g_bh_bg.dx + g_bh_bg.dw, g_bh_bg.dy + g_bh_bg.dh));
+	if (d.getWidth() <= 0 || d.getHeight() <= 0)
+		return false;
+	f32 sc = (f32)g_bh_bg.fw / (f32)g_bh_bg.dw;
+	s32 top = g_bh_bg.frame * g_bh_bg.fh;
+	core::rect<s32> sr(
+		(s32)((d.UpperLeftCorner.X - g_bh_bg.dx) * sc),
+		(s32)((d.UpperLeftCorner.Y - g_bh_bg.dy) * sc) + top,
+		(s32)((d.LowerRightCorner.X - g_bh_bg.dx) * sc),
+		(s32)((d.LowerRightCorner.Y - g_bh_bg.dy) * sc) + top);
+	sr.LowerRightCorner.X = std::min(sr.LowerRightCorner.X, g_bh_bg.fw);
+	sr.LowerRightCorner.Y = std::min(sr.LowerRightCorner.Y, top + g_bh_bg.fh);
+	driver->draw2DImage(blur_tex, d, sr);
+	driver->draw2DRectangle(video::SColor(150, 12, 10, 8), d);
+	driver->draw2DRectangleOutline(d, video::SColor(60, 255, 255, 255));
+	return true;
+}
 #include <IVideoDriver.h>
 #include "irr_v2d.h"
 

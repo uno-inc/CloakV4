@@ -145,10 +145,10 @@ local function get_formspec(tabview, name, tabdata_etc)
 
 		-- Address / Port
 		"label[0.25,0.55;" .. fgettext("Address") .. ":]" ..
-		"label[5.3,0.55;" .. fgettext("Port") .. ":]" ..
-		"field[1.65,1;4,0.25;te_address;;" ..
+		"label[5.0,0.55;" .. fgettext("Port") .. ":]" ..
+		"field[2.3,1;2.6,0.25;te_address;;" ..
 			core.formspec_escape(core.settings:get("address")) .. "]" ..
-		"field[6.2,1;1.75,0.25;te_port;;" ..
+		"field[5.95,1;1.95,0.25;te_port;;" ..
 			core.formspec_escape(core.settings:get("remote_port")) .. "]" ..
 
 		-- Description Background
@@ -159,8 +159,8 @@ local function get_formspec(tabview, name, tabdata_etc)
 		"container[0,7.25]" ..
 		"label[0.25,0;" .. fgettext("Name") .. ":]" ..
 		"label[3.7,0;" .. fgettext("Password") .. ":]" ..
-		"field[1.4,0.22;2.625,0.75;te_name;;" .. core.formspec_escape(core.settings:get("name")) .. "]" ..
-		"pwdfield[5.265,0.22;2.625,0.75;te_pwd;]" ..
+		"field[1.7,0.22;1.9,0.75;te_name;;" .. core.formspec_escape(core.settings:get("name")) .. "]" ..
+		"pwdfield[6.0,0.22;1.9,0.75;te_pwd;]" ..
 		"container_end[]" ..
 
 		-- Connect

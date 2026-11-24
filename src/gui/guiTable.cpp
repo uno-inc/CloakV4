@@ -4,6 +4,7 @@
 
 
 #include "guiTable.h"
+#include "guiBox.h"
 #include <queue>
 #include <sstream>
 #include <utility>
@@ -650,8 +651,9 @@ void GUITable::draw()
 
 	// draw background
 
-	bool draw_background = m_background.getAlpha() > 0;
-	if (m_border)
+	bool bh_glass = bhPaintGlass(Environment->getVideoDriver(), AbsoluteRect, AbsoluteClippingRect);
+	bool draw_background = !bh_glass && m_background.getAlpha() > 0;
+	if (m_border && !bh_glass)
 		skin->draw3DSunkenPane(this, m_background,
 				true, draw_background,
 				AbsoluteRect, &AbsoluteClippingRect);

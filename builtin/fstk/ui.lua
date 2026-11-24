@@ -128,7 +128,16 @@ function ui.update()
 			formspec = {ui.childlist[ui.default]:get_formspec()}
 		end
 	end
-	core.update_formspec(table.concat(formspec))
+	local bh_fs = table.concat(formspec)
+	if defaulttexturedir then
+		local function BH_ESC(n) return core.formspec_escape(defaulttexturedir .. n) end
+		local BH_STYLE = "style_type[button;border=false;textcolor=white;bgimg=" .. BH_ESC("menu_button.png") ..
+			";bgimg_hovered=" .. BH_ESC("menu_button_hovered.png") ..
+			";bgimg_pressed=" .. BH_ESC("menu_button_pressed.png") .. "]" ..
+			"style_type[field,pwdfield;border=false;bgcolor=#0c0a08B0;textcolor=white]"
+		bh_fs = bh_fs:gsub("(size%[[^%]]*%])", function(m) return m .. BH_STYLE end, 1)
+	end
+	core.update_formspec(bh_fs)
 end
 
 --------------------------------------------------------------------------------

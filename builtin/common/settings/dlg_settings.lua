@@ -544,8 +544,8 @@ local function get_formspec(dialogdata)
 		"container_end[]",
 		("scroll_container[0.25,1.25;%f,%f;leftscroll;vertical;0.1;0]"):format(
 			left_pane_width, tabsize.height - 1.5),
-		"style_type[button;border=false;bgcolor=#3333]",
-		"style_type[button:hover;border=false;bgcolor=#6663]",
+		"style_type[button;border=false;bgcolor=#0000]",
+		"style_type[button:hover;border=false;bgcolor=#0000]",
 	}
 
 	local y = 0
@@ -553,12 +553,16 @@ local function get_formspec(dialogdata)
 	for _, other_page in ipairs(filtered_pages) do
 		if other_page.section ~= last_section then
 			fs[#fs + 1] = ("label[0.1,%f;%s]"):format(
-				y + 0.41, core.colorize("#ff0", fgettext(other_page.section)))
+				y + 0.41, core.colorize("#F2B56B", fgettext(other_page.section)))
 			last_section = other_page.section
 			y = y + 0.82
 		end
-		fs[#fs + 1] = ("box[0,%f;%f,0.8;%s]"):format(
-			y, left_pane_width-left_pane_padding, other_page.id == page_id and "#467832FF" or "#3339")
+		if other_page.id == page_id then
+			fs[#fs + 1] = ("style[page_%s;bgimg=%s;bgimg_hovered=%s;textcolor=#2a1700]"):format(
+				other_page.id,
+				core.formspec_escape(defaulttexturedir .. "menu_button_primary.png"),
+				core.formspec_escape(defaulttexturedir .. "menu_button_primary_hovered.png"))
+		end
 		fs[#fs + 1] = ("button[0,%f;%f,0.8;page_%s;%s]")
 			:format(y, left_pane_width-left_pane_padding, other_page.id, fgettext(other_page.title))
 		y = y + 0.82
@@ -577,7 +581,7 @@ local function get_formspec(dialogdata)
 				left_pane_width + 0.25, scrollbar_w, tabsize.height - 1.5, dialogdata.leftscroll or 0)
 	end
 
-	fs[#fs + 1] = "style_type[button;border=;bgcolor=]"
+	fs[#fs + 1] = "style_type[button;border=false;bgcolor=#0000]"
 
 	if not dialogdata.components then
 		dialogdata.components = page and build_page_components(page) or {}
