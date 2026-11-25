@@ -3,6 +3,7 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <iostream>
+#include "log.h"
 
 #include "localplayer.h"
 #include <cmath>
@@ -187,6 +188,23 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3f &position,
 		new_sneak_node_exists = true;
 	}
 
+	{
+		static int d2 = 0;
+		if ((++d2 % 20) == 0) {
+			bool v1, v2;
+			MapNode nn = map->getNode(current_node, &v1);
+			MapNode na = map->getNode(current_node + v3s16(0, 1, 0), &v2);
+			u16 hh = ceilf((m_collisionbox.MaxEdge.Y - m_collisionbox.MinEdge.Y) / BS);
+			warningstream << "[sneakdbg2] pos=" << position.X / BS << ","
+				<< position.Y / BS << "," << position.Z / BS
+				<< " cur=" << (int)current_node.X << "," << (int)current_node.Y
+				<< "," << (int)current_node.Z
+				<< " under_walk=" << (v1 && nodemgr->get(nn).walkable)
+				<< " above_walk=" << (v2 && nodemgr->get(na).walkable)
+				<< " h=" << hh << " smax=" << sneak_max.X << "," << sneak_max.Z
+				<< std::endl;
+		}
+	}
 	if (!new_sneak_node_exists)
 		return false;
 
@@ -370,6 +388,14 @@ void LocalPlayer::move(f32 dtime, Environment *env, std::vector<CollisionInfo> *
 
 	bool could_sneak = correct_control.sneak && !free_move && !in_liquid &&
 		!is_climbing && physics_override.sneak;
+	{
+		static int sneakdbg = 0;
+		if (correct_control.sneak && (++sneakdbg % 30) == 0)
+			warningstream << "[sneakdbg] free_move=" << free_move
+				<< " liquid=" << in_liquid << " climbing=" << is_climbing
+				<< " phys_sneak=" << physics_override.sneak
+				<< " node=" << m_sneak_node_exists << std::endl;
+	}
 
 	// Add new collisions to the vector
 	if (collision_info && !free_move) {

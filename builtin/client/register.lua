@@ -31,6 +31,19 @@ core.object_refs = {}
 
 -- Adds an extra "Input" slot to mcl_chests formspecs.
 core.register_on_receiving_formspec(function(formname, formspec)
+	if formname == "__builtin:death" or formspec:find("btn_respawn", 1, true) then
+		return table.concat({
+			"formspec_version[8]",
+			"size[11,6.19,true]",
+			"bgcolor[#320000b4;true]",
+			"animated_image[0,0;11,6.19;bg_anim;death_bg_strip.png;56;159;1]",
+			"animated_image[4.1,0.5;2.8,2.8;bh_anim;death_blackhole_strip.png;30;67;1]",
+			"image[2.5,3.5;6,0.8;death_title.png]",
+			"style[btn_respawn;border=false;bgimg=death_btn.png;bgimg_hovered=death_btn_hover.png;bgimg_pressed=death_btn_pressed.png]",
+			"button_exit[3.7,4.75;3.6,0.9;btn_respawn;]",
+			"set_focus[btn_respawn;true]",
+		})
+	end
     core.log("action", "[RFS] formname=" .. tostring(formname) .. " len=" .. #formspec)
     if formname:find("^mcl_chests:") then
         for l in formspec:gmatch("list%[[^%]]*%]") do

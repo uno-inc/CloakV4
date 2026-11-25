@@ -1345,9 +1345,22 @@ void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
 	Send(&pkt);
 }
 
+extern sound_handle_t g_death_whisper_id;
+
 void Client::sendInventoryFields(const std::string &formname,
 		const StringMap &fields)
 {
+	if (fields.find("btn_respawn") != fields.end()) {
+		if (ISoundManager *snd = getSoundManager()) {
+			if (g_death_whisper_id > 0) {
+				snd->stopSound(g_death_whisper_id);
+				snd->freeId(g_death_whisper_id);
+				g_death_whisper_id = -1;
+			}
+			snd->playSound(0, SoundSpec("return_by_death", 1.0f));
+		}
+	}
+
 	size_t fields_size = fields.size();
 	FATAL_ERROR_IF(fields_size > 0xFFFF, "Unsupported number of inventory fields");
 

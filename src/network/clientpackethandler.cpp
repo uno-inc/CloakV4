@@ -517,6 +517,8 @@ void Client::handleCommand_Fov(NetworkPacket *pkt)
 	m_camera->notifyFovChange();
 }
 
+static sound_handle_t g_heartbeat_id = -1;
+
 void Client::handleCommand_HP(NetworkPacket *pkt)
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
@@ -532,6 +534,23 @@ void Client::handleCommand_HP(NetworkPacket *pkt)
 	} catch (PacketError &e) {};
 
 	player->hp = hp;
+
+	{
+		// low-health heartbeat loop
+		if (ISoundManager *snd = getSoundManager()) {
+			if (hp > 0 && hp <= 6) {
+				if (g_heartbeat_id <= 0) {
+					g_heartbeat_id = snd->allocateId(2);
+					snd->playSound(g_heartbeat_id,
+							SoundSpec("heartbeat_low", 1.0f, true));
+				}
+			} else if (g_heartbeat_id > 0) {
+				snd->stopSound(g_heartbeat_id);
+				snd->freeId(g_heartbeat_id);
+				g_heartbeat_id = -1;
+			}
+		}
+	}
 
 	if (modsLoaded())
 		m_script->on_hp_modification(hp);

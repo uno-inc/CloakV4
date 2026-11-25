@@ -4,6 +4,7 @@
 // Copyright (C) 2010-2013 blue42u, Jonathon Anderson <anderjon@umail.iu.edu>
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
+#include "porting.h"
 #include "client/hud.h"
 #include <string>
 #include <iostream>
@@ -652,6 +653,56 @@ void Hud::drawStatbar(v2s32 pos, u16 corner, u16 drawdir,
 	const video::SColor color(255, 255, 255, 255);
 	const video::SColor colors[] = {color, color, color, color};
 
+	// --- custom health bar (frame + cropped fill + live text) ---
+	if (texture == "heart.png") {
+		video::ITexture *bh_frame = tsrc->getTexture("health_frame.png");
+		video::ITexture *bh_fill = tsrc->getTexture("health_fill.png");
+		video::ITexture *bh_red = tsrc->getTexture("health_fill_red.png");
+		if (bh_frame && bh_fill) {
+			f32 frac = maxcount > 0 ? (f32)count / (f32)maxcount : 0.0f;
+			frac = std::min(1.0f, std::max(0.0f, frac));
+			core::dimension2du fsz_u = bh_frame->getOriginalSize();
+			core::dimension2di fsz((s32)fsz_u.Width, (s32)fsz_u.Height);
+			s32 W = (s32)std::min((f32)m_screensize.X * 0.20f, (f32)m_screensize.Y);
+			s32 H = W * fsz.Height / fsz.Width;
+			s32 margin = (s32)m_screensize.Y / 40;
+			s32 dx = margin - W * 2 / 100;
+			s32 dy = (s32)m_screensize.Y - margin - H * 81 / 100;
+			if (frac > 0.0f) {
+				video::ITexture *ft = (frac <= 0.3f && bh_red) ? bh_red : bh_fill;
+				core::dimension2du ssz_u = ft->getOriginalSize();
+				core::dimension2di ssz((s32)ssz_u.Width, (s32)ssz_u.Height);
+				f32 c = 0.2197f + frac * (0.9175f - 0.2197f);
+				core::rect<s32> srcr(0, 0, (s32)(c * ssz.Width), ssz.Height);
+				core::rect<s32> dstr(dx, dy, dx + (s32)(c * W), dy + H);
+				draw2DImageFilterScaled(driver, ft, dstr, srcr, NULL, colors, true);
+			}
+			core::rect<s32> frs(0, 0, fsz.Width, fsz.Height);
+			core::rect<s32> frd(dx, dy, dx + W, dy + H);
+			draw2DImageFilterScaled(driver, bh_frame, frd, frs, NULL, colors, true);
+			video::ITexture *bh_ring_tex = tsrc->getTexture("blackhole_badge_sheet.png");
+			if (bh_ring_tex) {
+				const s32 rcols = 6, rframes = 30, rcell = 256;
+				s32 rf = (s32)((porting::getTimeMs() / 67) % rframes);
+				s32 rsx = (rf % rcols) * rcell;
+				s32 rsy = (rf / rcols) * rcell;
+				s32 rs = H * 52 / 100;
+				s32 rcx = dx + W * 131 / 1000;
+				s32 rcy = dy + H * 553 / 1000;
+				core::rect<s32> rsrc(rsx, rsy, rsx + rcell, rsy + rcell);
+				core::rect<s32> rdst(rcx - rs / 2, rcy - rs / 2, rcx + rs / 2, rcy + rs / 2);
+				draw2DImageFilterScaled(driver, bh_ring_tex, rdst, rsrc, NULL, colors, true);
+			}
+			gui::IGUIFont *bf = g_fontengine->getFont(g_fontengine->getFontSize(FM_HD) * 0.7, FM_HD);
+			if (bf) {
+				std::wstring t = std::to_wstring(count) + L" / " + std::to_wstring(maxcount);
+				core::rect<s32> tr(dx + W * 30 / 100, dy + H * 42 / 100,
+						dx + W * 82 / 100, dy + H * 66 / 100);
+				bf->draw(t.c_str(), tr, video::SColor(255, 255, 255, 255), true, true);
+			}
+			return;
+		}
+	}
 	video::ITexture *stat_texture = tsrc->getTexture(texture);
 	if (!stat_texture)
 		return;

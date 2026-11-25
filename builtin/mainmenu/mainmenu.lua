@@ -69,10 +69,22 @@ local function bh_music_ui(width)
     bh_load_tracks()
     if #bh_tracks == 0 then return "" end
     local mx = width - 0.4 - 7.4
-    return string.format("label[%f,13.65;%s]", mx, core.formspec_escape(string.format("Track %d / %d", bh_track_idx, #bh_tracks)))
-        .. string.format("image_button[%f,13.3;1.2,0.7;;music_prev;<<]", mx + 2.5)
-        .. string.format("image_button[%f,13.3;1.9,0.7;;music_toggle;%s]", mx + 3.8, bh_playing and "Pause" or "Play")
-        .. string.format("image_button[%f,13.3;1.2,0.7;;music_next;>>]", mx + 5.8)
+    local accent = "#7C5CFF"
+    local state = bh_playing and "Now playing" or "Paused"
+    return string.format("box[%f,13.05;7.4,1.2;#0B0F1ACC]", mx)
+        .. string.format("box[%f,13.05;0.12,1.2;%s]", mx, accent)
+        .. string.format("label[%f,13.45;%s]", mx + 0.35, core.formspec_escape(state))
+        .. string.format("label[%f,13.85;%s]", mx + 0.35,
+            core.formspec_escape(string.format("Track %d / %d", bh_track_idx, #bh_tracks)))
+        .. "style[music_prev,music_next;bgcolor=#FFFFFF1F;textcolor=#FFFFFF;border=false;font_size=*1.3]"
+        .. "style[music_prev:hovered,music_next:hovered;bgcolor=#FFFFFF40]"
+        .. "style[music_prev:pressed,music_next:pressed;bgcolor=" .. accent .. "AA]"
+        .. "style[music_toggle;bgcolor=" .. accent .. ";textcolor=#FFFFFF;border=false;font_size=*1.4;font=bold]"
+        .. "style[music_toggle:hovered;bgcolor=#9A80FF]"
+        .. "style[music_toggle:pressed;bgcolor=#5E3FE0]"
+        .. string.format("image_button[%f,13.25;1.0,0.8;;music_prev;<<]", mx + 3.2)
+        .. string.format("image_button[%f,13.15;1.5,1.0;;music_toggle;%s]", mx + 4.35, bh_playing and "||" or ">")
+        .. string.format("image_button[%f,13.25;1.0,0.8;;music_next;>>]", mx + 6.0)
 end
 
 local function main_menu_formspec(this)

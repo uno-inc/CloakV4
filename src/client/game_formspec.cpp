@@ -8,6 +8,8 @@
 #include "nodemetadata.h"
 #include "renderingengine.h"
 #include "client.h"
+#include "sound.h"
+#include "client/sound.h"
 #include "scripting_client.h"
 #include "cpp_api/s_client_common.h"
 #include "clientmap.h"
@@ -135,8 +137,11 @@ struct LegacyDeathFormspecHandler : public TextDest
 
 	void gotText(const StringMap &fields)
 	{
-		if (fields.find("quit") != fields.end())
-			m_client->sendRespawnLegacy();
+		if (fields.find("quit") != fields.end()) {
+            if (ISoundManager *sound = m_client->getSoundManager())
+                sound->playSound(0, SoundSpec("return_by_death", 1.0f));
+            m_client->sendRespawnLegacy();
+        }
 	}
 
 	Client *m_client = nullptr;
@@ -237,8 +242,21 @@ bool GameFormSpec::handleEmptyFormspec(const std::string &formspec, const std::s
 	return false;
 }
 
+sound_handle_t g_death_whisper_id = -1;
+
 void GameFormSpec::showFormSpec(const std::string &formspec, const std::string &formname)
 {
+	if (formspec.find("btn_respawn") != std::string::npos) {
+		if (ISoundManager *snd = m_client->getSoundManager()) {
+			if (g_death_whisper_id > 0) {
+				snd->stopSound(g_death_whisper_id);
+				snd->freeId(g_death_whisper_id);
+			}
+			g_death_whisper_id = snd->allocateId(2);
+			snd->playSound(g_death_whisper_id, SoundSpec("death_whisper", 1.0f));
+		}
+	}
+
 	if (handleEmptyFormspec(formspec, formname))
 		return;
 
@@ -464,11 +482,13 @@ void GameFormSpec::showPauseMenu()
 void GameFormSpec::showDeathFormspecLegacy()
 {
 	static std::string formspec_str =
-		std::string("formspec_version[1]") +
+		std::string("formspec_version[4]") +
 		SIZE_TAG
-		"bgcolor[#320000b4;true]"
-		"label[4.85,1.35;" + gettext("You died") + "]"
-		"button_exit[4,3;3,0.5;btn_respawn;" + gettext("Respawn") + "]"
+		"bgcolor[#000000ff;true]"
+		"animated_image[-5.5,-3.4;22,12.4;bg_anim;death_bg_strip.png;56;159;1]"
+		"image[2.5,3.0;6,0.8;death_title.png]"
+		"style[btn_respawn;border=false;bgimg=death_btn.png;bgimg_hovered=death_btn_hover.png;bgimg_pressed=death_btn_pressed.png]"
+		"button_exit[3.7,4.1;3.6,0.9;btn_respawn;]"
 		;
 
 	/* Create menu */

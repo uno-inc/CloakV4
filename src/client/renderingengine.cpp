@@ -429,7 +429,7 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
                                 s32 sx = (frame % cols) * cell;
                                 s32 sy = (frame / cols) * cell;
                                 s32 size = (s32)screensize.Y / 4;
-                                s32 cx = (s32)screensize.X / 2;
+                                s32 cx = size / 2 + (s32)screensize.Y / 12;
                                 s32 cy = (s32)screensize.Y - size / 2 - (s32)screensize.Y / 12;
                                 core::rect<s32> dst(cx - size / 2, cy - size / 2, cx + size / 2, cy + size / 2);
                                 core::rect<s32> src(sx, sy, sx + cell, sy + cell);

@@ -3,12 +3,14 @@ local S = core.get_translator("__builtin")
 
 function core.show_death_screen(player, _reason)
 	local fs = {
-		"formspec_version[1]",
-		"size[11,5.5,true]",
-		"bgcolor[#320000b4;true]",
-		"label[4.85,1.35;", F(S("You died")), "]",
-		"button_exit[4,3;3,0.5;btn_respawn;", F(S("Respawn")), "]",
-	}
+		"formspec_version[4]",
+        "size[11,5.5,true]",
+        "bgcolor[#320000b4;true]",
+        "animated_image[4.1,0.15;2.8,2.8;bh_anim;death_blackhole_strip.png;30;67;1]",
+        "image[2.5,3.0;6,0.8;death_title.png]",
+        "style[btn_respawn;border=false;bgimg=death_btn.png;bgimg_hovered=death_btn_hover.png;bgimg_pressed=death_btn_pressed.png]",
+        "button_exit[3.7,4.1;3.6,0.9;btn_respawn;]",
+    }
 	core.show_formspec(player:get_player_name(), "__builtin:death", table.concat(fs, ""))
 end
 
